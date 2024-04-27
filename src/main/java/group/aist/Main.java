@@ -8,6 +8,7 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Main {
     private static ArrayList<Car> cars=new ArrayList<>();
@@ -23,20 +24,20 @@ public class Main {
             String carUrl = baseUrl + element.attr("href").substring(6);
             Document carDocument = Jsoup.connect(carUrl).get();
             Elements carSpecs = carDocument.select(".product-properties__i");
-            Elements carPrices = carSpecs.select(".product-price__i--bold");
+            Elements carPrices = carDocument.select(".product-price__i--bold");
 
             Car car = new Car();
 
-
-            for(Element p:carPrices){
-                datas.add("Price: " + p.text());
+            Optional<String> price = Optional.empty();
+            for(Element p : carPrices){
+                price = Optional.of(p.text());
             }
             for (Element e : carSpecs) {
                 String name = e.selectFirst(".product-properties__i-name").text();
                 String value = e.selectFirst(".product-properties__i-value").text();
                 datas.add(name+": "+value);
             }
-            car.setPrice(datas.stream().filter(x->x.startsWith("P")).findFirst().map(s->s.substring(7)).orElse(null));
+            car.setPrice(price.orElse(null));
             car.setCity(datas.stream().filter(x->x.startsWith("Ş")).findFirst().map(s->s.substring(7)).orElse(null));
             car.setModel(datas.stream().filter(x-> x.startsWith("Mo")).findFirst().map(s->s.substring(7)).orElse(null));
             car.setBrand(datas.stream().filter(x->x.startsWith("Ma")).findFirst().map(s->s.substring(7)).orElse(null));
