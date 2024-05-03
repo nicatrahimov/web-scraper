@@ -10,6 +10,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,7 +23,80 @@ public class Main {
     private static final ArrayList<Car> cars = new ArrayList<>();
 
     public static void main(String[] args) throws IOException {
-        for (int i = 1; i < 5; i++) {
+        HSSFWorkbook workbook;
+        int lastPage=1;
+
+        try(FileInputStream fis = new FileInputStream("/home/nicat/Desktop/web-scraper/src/main/resources/cars.xlsx")){
+            workbook = new HSSFWorkbook(fis);
+            HSSFSheet sheet = workbook.getSheetAt(0);
+            int lastNumberOfSheet = sheet.getLastRowNum() - 1; //Header setiri olduguna gore 1 cixildi
+            if(lastNumberOfSheet % 36==0){
+                lastPage = lastNumberOfSheet/36+1;
+            }
+            scrapeDataAndAddToList(lastPage,10);
+            addCarDataToFile(workbook,cars,sheet.getLastRowNum());
+            workbook.write(new FileOutputStream("src/main/resources/cars.xlsx"));
+
+        }catch (FileNotFoundException exception){
+            HSSFWorkbook newWorkbook = createNewExcelFileForCars();
+            scrapeDataAndAddToList(lastPage,3);
+            addCarDataToFile(newWorkbook,cars,lastPage);
+            newWorkbook.write(new FileOutputStream("src/main/resources/cars.xlsx"));
+        }
+
+    }
+
+    private static HSSFWorkbook createNewExcelFileForCars() throws IOException {
+        try(HSSFWorkbook workbook = new HSSFWorkbook()){
+            HSSFSheet sheet = workbook.createSheet();
+            HSSFRow dataNameRow = sheet.createRow(0);
+
+            dataNameRow.createCell(0).setCellValue("QIYMET");
+            dataNameRow.createCell(1).setCellValue("SEHER");
+            dataNameRow.createCell(2).setCellValue("MARKA");
+            dataNameRow.createCell(3).setCellValue("MODEL");
+            dataNameRow.createCell(4).setCellValue("BURAXILIS ILI");
+            dataNameRow.createCell(5).setCellValue("BAN NOVU");
+            dataNameRow.createCell(6).setCellValue("RENG");
+            dataNameRow.createCell(7).setCellValue("MUHERRIK");
+            dataNameRow.createCell(8).setCellValue("YURUS");
+            dataNameRow.createCell(9).setCellValue("SURETLER QUTUSU");
+            dataNameRow.createCell(10).setCellValue("OTURUCU");
+            dataNameRow.createCell(11).setCellValue("YENI");
+            dataNameRow.createCell(12).setCellValue("YERLERIN SAYI");
+            dataNameRow.createCell(13).setCellValue("VEZIYYETI");
+            dataNameRow.createCell(14).setCellValue("HANSI BAZAR UCUN YIGILIB");
+            return workbook;
+
+        }
+    }
+
+    private static void addCarDataToFile(HSSFWorkbook workbook,ArrayList<Car> cars,int lastRow){
+        int rownum = lastRow+1;
+        for (Car car : cars) {
+            HSSFRow valueRow = workbook.getSheetAt(0).createRow(rownum);
+            valueRow.createCell(0).setCellValue(car.getPrice());
+            valueRow.createCell(1).setCellValue(car.getCity());
+            valueRow.createCell(2).setCellValue(car.getBrand());
+            valueRow.createCell(3).setCellValue(car.getModel());
+            valueRow.createCell(4).setCellValue(car.getReleaseDate());
+            valueRow.createCell(5).setCellValue(car.getBan());
+            valueRow.createCell(6).setCellValue(car.getColor());
+            valueRow.createCell(7).setCellValue(car.getEngine());
+            valueRow.createCell(8).setCellValue(car.getRidingDistance());
+            valueRow.createCell(9).setCellValue(car.getTransmission());
+            valueRow.createCell(10).setCellValue(car.getDriveUnite());
+            valueRow.createCell(11).setCellValue(car.getIsNew());
+            valueRow.createCell(12).setCellValue(car.getSeatNumber());
+            valueRow.createCell(13).setCellValue(car.getCondition());
+            valueRow.createCell(14).setCellValue(car.getRegion());
+            rownum++;
+        }
+    }
+
+    private static void scrapeDataAndAddToList(int lastPage,int pageLimit) throws IOException {
+        for (int i = lastPage; i < pageLimit; i++) {
+
             String pageByPageNumberUrl = baseUrl + "?page=" + i;
 
             Document baseDocument = Jsoup.connect(pageByPageNumberUrl).get();
@@ -64,58 +139,7 @@ public class Main {
                 car.setRegion(datas.stream().filter(x -> x.startsWith("H")).findFirst().map(s -> s.substring(26)).orElse(null));
                 cars.add(car);
             }
-            System.out.println(datas);
-        }
-        System.out.println(cars);
-
-
-        try (HSSFWorkbook workbook = new HSSFWorkbook()) {
-            HSSFSheet sheet = workbook.createSheet();
-            HSSFRow dataNameRow = sheet.createRow(0);
-
-            dataNameRow.createCell(0).setCellValue("QIYMET");
-            dataNameRow.createCell(1).setCellValue("SEHER");
-            dataNameRow.createCell(2).setCellValue("MARKA");
-            dataNameRow.createCell(3).setCellValue("MODEL");
-            dataNameRow.createCell(4).setCellValue("BURAXILIS ILI");
-            dataNameRow.createCell(5).setCellValue("BAN NOVU");
-            dataNameRow.createCell(6).setCellValue("RENG");
-            dataNameRow.createCell(7).setCellValue("MUHERRIK");
-            dataNameRow.createCell(8).setCellValue("YURUS");
-            dataNameRow.createCell(9).setCellValue("SURETLER QUTUSU");
-            dataNameRow.createCell(10).setCellValue("OTURUCU");
-            dataNameRow.createCell(11).setCellValue("YENI");
-            dataNameRow.createCell(12).setCellValue("YERLERIN SAYI");
-            dataNameRow.createCell(13).setCellValue("VEZIYYETI");
-            dataNameRow.createCell(14).setCellValue("HANSI BAZAR UCUN YIGILIB");
-
-            int rownum = 1;
-            for (Car car : cars) {
-                HSSFRow valueRow = sheet.createRow(rownum);
-                valueRow.createCell(0).setCellValue(car.getPrice());
-                valueRow.createCell(1).setCellValue(car.getCity());
-                valueRow.createCell(2).setCellValue(car.getBrand());
-                valueRow.createCell(3).setCellValue(car.getModel());
-                valueRow.createCell(4).setCellValue(car.getReleaseDate());
-                valueRow.createCell(5).setCellValue(car.getBan());
-                valueRow.createCell(6).setCellValue(car.getColor());
-                valueRow.createCell(7).setCellValue(car.getEngine());
-                valueRow.createCell(8).setCellValue(car.getRidingDistance());
-                valueRow.createCell(9).setCellValue(car.getTransmission());
-                valueRow.createCell(10).setCellValue(car.getDriveUnite());
-                valueRow.createCell(11).setCellValue(car.getIsNew());
-                valueRow.createCell(12).setCellValue(car.getSeatNumber());
-                valueRow.createCell(13).setCellValue(car.getCondition());
-                valueRow.createCell(14).setCellValue(car.getRegion());
-                rownum++;
-            }
-
-
-            try (FileOutputStream outputStream = new FileOutputStream("src/main/resources/cars.xlxs")) {
-                workbook.write(outputStream);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Parsing data in page number: "+i);
         }
     }
 }
