@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class Main {
+public class Scraper {
     static String baseUrl = "https://turbo.az/autos";
     private static final ArrayList<Car> cars = new ArrayList<>();
 
