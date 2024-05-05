@@ -29,18 +29,18 @@ public class Scraper {
         try(FileInputStream fis = new FileInputStream("/home/nicat/Desktop/web-scraper/src/main/resources/cars.xlsx")){
             workbook = new HSSFWorkbook(fis);
             HSSFSheet sheet = workbook.getSheetAt(0);
-            int lastNumberOfSheet = sheet.getLastRowNum() - 1; //Header setiri olduguna gore 1 cixildi
-            if(lastNumberOfSheet % 36==0){
-                lastPage = lastNumberOfSheet/36+1;
+            int lastRow = sheet.getLastRowNum();
+            if(lastRow % 36==0){
+                lastPage = lastRow/36 + 1;
             }
-            scrapeDataAndAddToList(lastPage,10);
-            addCarDataToFile(workbook,cars,sheet.getLastRowNum());
+            scrapeDataAndAddToList(lastPage,6);
+            addCarDataToFile(workbook, sheet.getLastRowNum());
             workbook.write(new FileOutputStream("src/main/resources/cars.xlsx"));
 
         }catch (FileNotFoundException exception){
             HSSFWorkbook newWorkbook = createNewExcelFileForCars();
             scrapeDataAndAddToList(lastPage,3);
-            addCarDataToFile(newWorkbook,cars,lastPage);
+            addCarDataToFile(newWorkbook, newWorkbook.getSheetAt(0).getLastRowNum());
             newWorkbook.write(new FileOutputStream("src/main/resources/cars.xlsx"));
         }
 
@@ -71,9 +71,9 @@ public class Scraper {
         }
     }
 
-    private static void addCarDataToFile(HSSFWorkbook workbook,ArrayList<Car> cars,int lastRow){
+    private static void addCarDataToFile(HSSFWorkbook workbook, int lastRow){
         int rownum = lastRow+1;
-        for (Car car : cars) {
+        for (Car car : Scraper.cars) {
             HSSFRow valueRow = workbook.getSheetAt(0).createRow(rownum);
             valueRow.createCell(0).setCellValue(car.getPrice());
             valueRow.createCell(1).setCellValue(car.getCity());
@@ -96,6 +96,7 @@ public class Scraper {
 
     private static void scrapeDataAndAddToList(int lastPage,int pageLimit) throws IOException {
         for (int i = lastPage; i < pageLimit; i++) {
+            System.out.println("Parsing data in page number: "+i);
 
             String pageByPageNumberUrl = baseUrl + "?page=" + i;
 
@@ -139,7 +140,6 @@ public class Scraper {
                 car.setRegion(datas.stream().filter(x -> x.startsWith("H")).findFirst().map(s -> s.substring(26)).orElse(null));
                 cars.add(car);
             }
-            System.out.println("Parsing data in page number: "+i);
         }
     }
 }
